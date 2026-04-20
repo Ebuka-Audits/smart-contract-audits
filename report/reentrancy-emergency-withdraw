@@ -1,1 +1,48 @@
+# 🛑 Reentrancy in emergencyWithdraw
+
+## Severity
+High
+
+---
+
+## Description
+The `emergencyWithdraw` function does not implement a reentrancy guard and performs an external call before updating the internal state.
+
+This allows control to be transferred to an external contract before the user's balance is reset.
+
+---
+
+## Vulnerable Code
+
+```solidity
+function emergencyWithdraw() public {
+    payable(msg.sender).call{value: balance[msg.sender]}("");
+    balance[msg.sender] = 0;
+}
+
+
+
+##Impact
+
+A malicious contract can exploit this vulnerability by re-entering the emergencyWithdraw function multiple times before the balance is updated, allowing repeated withdrawals and potentially draining the contract.
+
+## Recommendation
+
+Apply the Checks-Effects-Interactions pattern:
+Update state before external calls
+Add a reentrancy guard modifier
+
+##Fixed Version
+
+function emergencyWithdraw() public noReentrant {
+    uint amount = balance[msg.sender];
+    balance[msg.sender] = 0;
+
+    payable(msg.sender).call{value: amount}("");
+}
+
+
+
+
+
 
